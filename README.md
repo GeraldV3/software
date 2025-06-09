@@ -1,4 +1,4 @@
-````markdown
+
 ### Paano mag-clone sa PC mo locally
 
 ### Prerequisites
