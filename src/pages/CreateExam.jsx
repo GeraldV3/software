@@ -93,6 +93,10 @@ const CreateExam = () => {
 
   const handleNext = () => {
     if (currentStep === 0) {
+      if (!courseCode.trim()) {
+        alert("Please enter a course code to continue.");
+        return;
+      }
       const filtered = allTestBanks.filter(
         (bank) =>
           bank.raw?.course_code?.toLowerCase() ===
