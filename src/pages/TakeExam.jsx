@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Container, Typography, Card, CardContent, TextField, Button, Box } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Container, Typography, Card, CardContent, TextField, Button, Box, FormControlLabel, Switch } from "@mui/material";
 import testBank from "../data/TestBank";
 
 const TakeExam = () => {
@@ -8,13 +8,40 @@ const TakeExam = () => {
     const [feedback, setFeedback] = useState("");
     const [score, setScore] = useState(0);
     const [examFinished, setExamFinished] = useState(false);
+    const [shuffleQuestions, setShuffleQuestions] = useState(false);
+    const [shuffledQuestions, setShuffledQuestions] = useState(testBank); // Initialize with testBank
 
-    // Get the current question from the TestBank
-    const currentQuestion = testBank[currentQuestionIndex];
+    // Shuffle function using Fisher-Yates algorithm
+    const shuffleArray = (array) => {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    };
+
+    // Initialize questions when component mounts or shuffle setting changes
+    useEffect(() => {
+        if (shuffleQuestions) {
+            setShuffledQuestions(shuffleArray(testBank));
+        } else {
+            setShuffledQuestions(testBank);
+        }
+        // Reset exam state when shuffling changes
+        setCurrentQuestionIndex(0);
+        setUserAnswer("");
+        setFeedback("");
+        setScore(0);
+        setExamFinished(false);
+    }, [shuffleQuestions]);
+
+    // Get the current question from either shuffled or original array
+    const currentQuestion = shuffledQuestions[currentQuestionIndex];
 
     // Function to handle answer submission
     const handleAnswerSubmit = () => {
-        // Check if the user's answer (case insensitive) matches the correct answer
+        if (!currentQuestion) return; // Safety check
         if (userAnswer.trim().toLowerCase() === currentQuestion.answer.trim().toLowerCase()) {
             setFeedback("Correct!");
             setScore(score + 1);
@@ -27,7 +54,7 @@ const TakeExam = () => {
     const handleNextQuestion = () => {
         setFeedback("");
         setUserAnswer("");
-        if (currentQuestionIndex < testBank.length - 1) {
+        if (currentQuestionIndex < shuffledQuestions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
         } else {
             setExamFinished(true);
@@ -36,12 +63,26 @@ const TakeExam = () => {
 
     // Function to restart the exam
     const handleRestart = () => {
+        if (shuffleQuestions) {
+            setShuffledQuestions(shuffleArray(testBank));
+        }
         setCurrentQuestionIndex(0);
         setUserAnswer("");
         setFeedback("");
         setScore(0);
         setExamFinished(false);
     };
+
+    // Safety check - if no questions are available
+    if (!shuffledQuestions || shuffledQuestions.length === 0) {
+        return (
+            <Container sx={{ mt: 4 }}>
+                <Typography variant="h4" align="center" gutterBottom sx={{ color: "#15133D" }}>
+                    No Questions Available
+                </Typography>
+            </Container>
+        );
+    }
 
     return (
         <Container sx={{ mt: 4 }}>
@@ -54,7 +95,7 @@ const TakeExam = () => {
                         Exam Finished!
                     </Typography>
                     <Typography variant="h6" sx={{ color: "#8B6220" }}>
-                        Your Score: {score} / {testBank.length}
+                        Your Score: {score} / {shuffledQuestions.length}
                     </Typography>
                     <Button
                         variant="contained"
@@ -72,81 +113,96 @@ const TakeExam = () => {
                     </Button>
                 </Box>
             ) : (
-                <Card sx={{ boxShadow: 3, borderRadius: 3, p: 3, backgroundColor: "#FFF1E8", border: "2px solid #8E2839",}}>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom sx={{ color: "#15133D" }}>
-                            Question {currentQuestionIndex + 1} of {testBank.length}
-                        </Typography>
-                        <Typography variant="body1" gutterBottom sx={{ color: "#8B6220" }}>
-                            {currentQuestion.question}
-                        </Typography>
-                        <TextField
-                            fullWidth
-                            label="Your Answer"
-                            variant="outlined"
-                            value={userAnswer}
-                            onChange={(e) => setUserAnswer(e.target.value)}
-                            sx={{
-                                mt: 2,
-                                backgroundColor: "#FFF",
-                                borderRadius: 2,
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: 3,
-                                },
-                            }}
+                <>
+                    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={shuffleQuestions}
+                                    onChange={(e) => setShuffleQuestions(e.target.checked)}
+                                    color="primary"
+                                />
+                            }
+                            label="Shuffle Questions"
+                            sx={{ color: "#8B6220" }}
                         />
-                        {feedback && (
-                            <Typography
-                                variant="subtitle1"
+                    </Box>
+                    <Card sx={{ boxShadow: 3, borderRadius: 3, p: 3, backgroundColor: "#FFF1E8", border: "2px solid #8E2839" }}>
+                        <CardContent>
+                            <Typography variant="h6" gutterBottom sx={{ color: "#15133D" }}>
+                                Question {currentQuestionIndex + 1} of {shuffledQuestions.length}
+                            </Typography>
+                            <Typography variant="body1" gutterBottom sx={{ color: "#8B6220" }}>
+                                {currentQuestion?.question}
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Your Answer"
+                                variant="outlined"
+                                value={userAnswer}
+                                onChange={(e) => setUserAnswer(e.target.value)}
                                 sx={{
                                     mt: 2,
-                                    color: feedback === "Correct!" ? "green" : "red",
-                                }}
-                            >
-                                {feedback}
-                            </Typography>
-                        )}
-                        <Box
-                            sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                mt: 3,
-                                flexWrap: "wrap",
-                                gap: 2,
-                            }}
-                        >
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleAnswerSubmit}
-                                disabled={feedback !== ""}
-                                sx={{
-                                    backgroundColor: "#8E2839",
-                                    "&:hover": {
-                                        backgroundColor: "#D5AC4E",
+                                    backgroundColor: "#FFF",
+                                    borderRadius: 2,
+                                    "& .MuiOutlinedInput-root": {
+                                        borderRadius: 3,
                                     },
                                 }}
-                            >
-                                Submit Answer
-                            </Button>
+                            />
                             {feedback && (
+                                <Typography
+                                    variant="subtitle1"
+                                    sx={{
+                                        mt: 2,
+                                        color: feedback === "Correct!" ? "green" : "red",
+                                    }}
+                                >
+                                    {feedback}
+                                </Typography>
+                            )}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    mt: 3,
+                                    flexWrap: "wrap",
+                                    gap: 2,
+                                }}
+                            >
                                 <Button
                                     variant="contained"
-                                    color="secondary"
-                                    onClick={handleNextQuestion}
+                                    color="primary"
+                                    onClick={handleAnswerSubmit}
+                                    disabled={feedback !== ""}
                                     sx={{
-                                        backgroundColor: "#45050C",
+                                        backgroundColor: "#8E2839",
                                         "&:hover": {
-                                            backgroundColor: "#720E07",
+                                            backgroundColor: "#D5AC4E",
                                         },
                                     }}
                                 >
-                                    Next Question
+                                    Submit Answer
                                 </Button>
-                            )}
-                        </Box>
-                    </CardContent>
-                </Card>
+                                {feedback && (
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        onClick={handleNextQuestion}
+                                        sx={{
+                                            backgroundColor: "#45050C",
+                                            "&:hover": {
+                                                backgroundColor: "#720E07",
+                                            },
+                                        }}
+                                    >
+                                        Next Question
+                                    </Button>
+                                )}
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </>
             )}
         </Container>
     );
