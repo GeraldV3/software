@@ -106,6 +106,12 @@ const CreateExam = () => {
       setAvailableFiles(filtered);
     }
 
+    //  Prevent proceeding to step 3 if no test bank selected
+    if (currentStep === 1 && selectedFiles.length === 0) {
+      alert("Please select at least one test bank before proceeding.");
+      return;
+    }
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
