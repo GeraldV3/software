@@ -24,7 +24,7 @@ import {
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import DeleteIcon from "@mui/icons-material/Delete";
-import testBank from "../data/TestBank";
+// import testBank from "../data/TestBank";
 import { jsPDF } from "jspdf";
 
 const CreateExamScratch = () => {
