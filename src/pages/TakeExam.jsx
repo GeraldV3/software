@@ -28,8 +28,15 @@ const TakeExam = () => {
       } else {
         // Flatten all questions from all sections of all test banks
         const allQuestions = data.flatMap((bank) =>
-          Object.values(bank.raw.items).flatMap((section) => section.items)
+          Object.values(bank.raw.items).flatMap((section) =>
+            section.items.map((item) => ({
+              question: item.testItem || "No question text",
+              answer: "", // <-- use actual answer if you have it
+              ...item,
+            }))
+          )
         );
+
         setTestBank(allQuestions);
       }
       setLoading(false);
@@ -66,11 +73,22 @@ const TakeExam = () => {
 
   // Function to handle answer submission
   const handleAnswerSubmit = () => {
-    // Check if the user's answer (case insensitive) matches the correct answer
-    if (
-      userAnswer.trim().toLowerCase() ===
-      currentQuestion.answer.trim().toLowerCase()
-    ) {
+    if (!currentQuestion) return;
+
+    const correctAnswer =
+      typeof currentQuestion.answer === "string"
+        ? currentQuestion.answer.trim().toLowerCase()
+        : "";
+
+    const userResponse =
+      typeof userAnswer === "string" ? userAnswer.trim().toLowerCase() : "";
+
+    if (!correctAnswer) {
+      setFeedback("No answer key provided.");
+      return;
+    }
+
+    if (userResponse === correctAnswer) {
       setFeedback("Correct!");
       setScore(score + 1);
     } else {
@@ -146,8 +164,9 @@ const TakeExam = () => {
               Question {currentQuestionIndex + 1} of {testBank.length}
             </Typography>
             <Typography variant="body1" gutterBottom sx={{ color: "#8B6220" }}>
-              {currentQuestion.question}
+              {currentQuestion?.question || "⚠️ No question text found"}
             </Typography>
+
             <TextField
               fullWidth
               label="Your Answer"
